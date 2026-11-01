@@ -127,6 +127,50 @@ rc-update add avahi2dns
 rc-service avahi2dns start
 ```
 
+### NixOS
+
+The flake has a NixOS module (`nixosModules.default`, in `nix/module.nix`). It builds the package with the nixpkgs of the system:
+
+```nix
+{
+  inputs.avahi2dns.url = "github:menduz/avahi2dns";
+
+  outputs = { nixpkgs, avahi2dns, ... }: {
+    nixosConfigurations.example = nixpkgs.lib.nixosSystem {
+      modules = [
+        avahi2dns.nixosModules.default
+        {
+          services.avahi.enable = true;
+          services.avahi2dns = {
+            enable = true; # listens on 127.0.0.1:5354, resolves .local
+            # domains = [ "local" ];
+            # timeout = "1500ms";
+            # family = "any"; # or "ipv4", "ipv6"
+          };
+          # e.g. Unbound forwards .local to avahi2dns:
+          services.unbound.settings = {
+            server = {
+              do-not-query-localhost = false;
+              domain-insecure = [ "local" ];
+              private-domain = [ "local" ];
+            };
+            forward-zone = [
+              {
+                name = "local.";
+                forward-addr = [ "127.0.0.1@5354" ];
+                forward-no-cache = true;
+              }
+            ];
+          };
+        }
+      ];
+    };
+  };
+}
+```
+
+`nix flake check` builds the package (with the Go tests) and runs a NixOS test: two virtual machines, one publishes its name with avahi, the other resolves it with avahi2dns.
+
 ### Any Linux
 
 Checkout the [latest release](https://github.com/LouisBrunner/avahi2dns/releases/latest) and download the binary corresponding to your architecture.
