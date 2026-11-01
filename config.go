@@ -25,7 +25,7 @@ type config struct {
 	Debug    bool          `arg:"-v" default:"false" help:"also include debug information"`
 	V4only   bool          `arg:"-4" default:"false" help:"only resolve A records"`
 	V6only   bool          `arg:"-6" default:"false" help:"only resolve AAAA records"`
-	Timeout  time.Duration `arg:"-t" default:"0s" help:"timeout for the Avahi request, 0 meaning none, see https://pkg.go.dev/time#ParseDuration for units and format"`
+	Timeout  time.Duration `arg:"-t" default:"1500ms" help:"timeout for the Avahi request, after which the host is not found, 0 meaning none, see https://pkg.go.dev/time#ParseDuration for units and format"`
 }
 
 var mustParse = arg.MustParse

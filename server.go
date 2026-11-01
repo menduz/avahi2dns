@@ -8,6 +8,7 @@ import (
 
 	"github.com/miekg/dns"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/sync/singleflight"
 )
 
 type forwarder struct {
@@ -20,6 +21,8 @@ type forwarder struct {
 	v4only  bool
 	v6only  bool
 	domains map[string]bool
+	// inflight shares the avahi requests of concurrent lookups.
+	inflight singleflight.Group
 }
 
 func NewForwarder(logger *logrus.Logger, cfg *config, avahi avahiClient) (*forwarder, error) {

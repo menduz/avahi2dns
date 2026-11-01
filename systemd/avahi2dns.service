@@ -7,7 +7,7 @@ Wants=dbus-org.freedesktop.Avahi.service
 [Service]
 Type=simple
 User=avahi2dns
-ExecStart=/usr/bin/avahi2dns --port 5354 --timeout 2.5s
+ExecStart=/usr/bin/avahi2dns --port 5354
 Restart=on-failure
 
 [Install]

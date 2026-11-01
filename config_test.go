@@ -39,6 +39,7 @@ func defaultConfig(mutate func(*config)) *config {
 		Domains:  defaultDomains,
 		BindAddr: "localhost",
 		Port:     53,
+		Timeout:  1500 * time.Millisecond,
 	}
 	if mutate != nil {
 		mutate(cfg)

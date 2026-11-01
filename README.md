@@ -16,22 +16,38 @@ go build
 
 ```shell
 $ ./avahi2dns -h
-Usage: avahi2dns [--domains DOMAINS] [--addr ADDR] [--port PORT] [--debug] [--v6only] [--timeout TIMEOUT]
+Usage: avahi2dns [--domains DOMAINS] [--addr ADDR] [--port PORT] [--debug] [--v4only] [--v6only] [--timeout TIMEOUT]
 
 Options:
   --domains DOMAINS, -d DOMAINS
                          list of domains to resolve (e.g. '-d local -d home')
-  --addr ADDR, -a ADDR   address to bind on [default: localhost]
-  --port PORT, -p PORT   port to bind on [default: 53]
+  --addr ADDR, -a ADDR   address to bind on [default: localhost, env: BIND]
+  --port PORT, -p PORT   port to bind on [default: 53, env: PORT]
   --debug, -v            also include debug information [default: false]
+  --v4only, -4           only resolve A records [default: false]
   --v6only, -6           only resolve AAAA records [default: false]
   --timeout TIMEOUT, -t TIMEOUT
-                         timeout for the Avahi request, 0 meaning none, see https://pkg.go.dev/time#ParseDuration for units and format [default: 0s]
+                         timeout for the Avahi request, after which the host is not found, 0 meaning none, see https://pkg.go.dev/time#ParseDuration for units and format [default: 1500ms]
   --help, -h             display this help and exit
 ```
 
 > [!TIP]
 > You can also configure the server through environment variables.
+
+### Answers
+
+For each query, `avahi2dns` looks up the name in IPv4 and IPv6 at the same time (only one of them with `--v4only` or `--v6only`):
+
+- `A`/`AAAA`: the address, as soon as avahi finds one of this family
+- the host exists, but has no address of the asked family (or the asked type is not `A`/`AAAA`): `NOERROR` without an answer (NODATA)
+- avahi finds the host in no family: `NXDOMAIN`
+- avahi fails (e.g. it does not run): `SERVFAIL`
+
+Negative answers include the SOA record of the domain. A link-local IPv6 address (`fe80::/10`) is never sent: it needs the interface, which DNS cannot carry.
+
+Concurrent queries for the same name share one avahi request, e.g. the `A` and `AAAA` queries of one client, or the retransmissions of a resolver.
+
+avahi waits 5 seconds before it reports a missing host. Most resolvers do not wait that long: e.g. Unbound (1.21 and later) drops replies after its `discard-timeout` (1.9 seconds). Thus `--timeout` defaults to 1.5 seconds, after which the host is not found. Avahi sends its mDNS query again after about 1 second, thus 1.5 seconds include one retransmission.
 
 ### Examples
 
